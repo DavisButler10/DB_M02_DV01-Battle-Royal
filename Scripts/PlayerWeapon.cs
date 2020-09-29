@@ -22,37 +22,30 @@ public class PlayerWeapon : MonoBehaviour
 
     void Awake()
     {
-        // get required components
         player = GetComponent<PlayerController>();
     }
 
     public void TryShoot()
     {
-        // can we shoot?
         if (curAmmo <= 0 || Time.time - lastShootTime < shootRate)
             return;
 
         curAmmo--;
         lastShootTime = Time.time;
 
-        // update the ammo UI
         GameUI.instance.UpdateAmmoText();
 
-        // spawn the bullet
         player.photonView.RPC("SpawnBullet", RpcTarget.All, bulletSpawnPos.transform.position, Camera.main.transform.forward);
     }
 
     [PunRPC]
     void SpawnBullet(Vector3 pos, Vector3 dir)
     {
-        // spawn and orientate it
         GameObject bulletObj = Instantiate(bulletPrefab, pos, Quaternion.identity);
         bulletObj.transform.forward = dir;
 
-        // get bullet script
         Bullet bulletScript = bulletObj.GetComponent<Bullet>();
 
-        // initialize it and set the velocity
         bulletScript.Initialize(damage, player.id, player.photonView.IsMine);
         bulletScript.rig.velocity = dir * bulletSpeed;
     }
@@ -62,7 +55,6 @@ public class PlayerWeapon : MonoBehaviour
     {
         curAmmo = Mathf.Clamp(curAmmo + ammoToGive, 0, maxAmmo);
 
-        // update the ammo text
         GameUI.instance.UpdateAmmoText();
     }
 }

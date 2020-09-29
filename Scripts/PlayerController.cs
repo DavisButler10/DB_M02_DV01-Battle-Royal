@@ -34,14 +34,12 @@ public class PlayerController : MonoBehaviourPun
         id = player.ActorNumber;
         photonPlayer = player;
         GameManager.instance.players[id - 1] = this;
+        mr.material = PlayerCustomization.instance.playerColor;
 
-        // is this not our local player?
         if (!photonView.IsMine)
         {
-            // deactivate other players' cameras in my game
             GetComponentInChildren<Camera>().gameObject.SetActive(false);
 
-            // turn off other players' physics in my game (let Photon tell us what's happening to them)
             rig.isKinematic = true;
         }
         else
@@ -54,7 +52,6 @@ public class PlayerController : MonoBehaviourPun
     {
         if (!photonView.IsMine || dead)
         {
-            // we'll handle movement for other players via the PhotonTransformView, so just return if this player isn't me
             return;
         }
 
@@ -67,24 +64,19 @@ public class PlayerController : MonoBehaviourPun
 
     void Move()
     {
-        // get the input axis
         float x = Input.GetAxis("Horizontal");
         float z = Input.GetAxis("Vertical");
 
-        // calculate a direction relative to where we're facing
         Vector3 dir = (transform.forward * z + transform.right * x) * moveSpeed;
         dir.y = rig.velocity.y;
 
-        // set that as our velocity
         rig.velocity = dir;
     }
 
     void TryJump()
     {
-        // create a ray facing down
         Ray ray = new Ray(transform.position, Vector3.down);
 
-        // shoot the raycast
         if (Physics.Raycast(ray, 1.5f))
             rig.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
     }
@@ -98,14 +90,10 @@ public class PlayerController : MonoBehaviourPun
         curHp -= damage;
         curAttackerId = attackerId;
 
-        // flash the player red
-        // we don't need to call this on ourselves because we can't see our own body
         photonView.RPC("DamageFlash", RpcTarget.Others);
 
-        // update the health bar UI
         GameUI.instance.UpdateHealthBar();
 
-        // die if no health left
         if (curHp <= 0)
             photonView.RPC("Die", RpcTarget.All);
     }
@@ -134,30 +122,22 @@ public class PlayerController : MonoBehaviourPun
     [PunRPC]
     void Die()
     {
-        // Q: How does it know which player this is being called about?
-        // A: In TakeDamage, the PlayerController that is dying tells all clients to run the Die function.
-        //      Photon Network then runs the die function on the playercontroller that sent it.
         curHp = 0;
         dead = true;
 
         GameManager.instance.alivePlayers--;
         GameUI.instance.UpdatePlayerInfoText();
 
-        // host will check win condition
-        // CheckWinCondition doesn't just check, but also ends the game, so flow would stop there
         if (PhotonNetwork.IsMasterClient)
             GameManager.instance.CheckWinCondition();
 
         if (photonView.IsMine)
         {
-            // check if I'm dying to a player or the force field
             if (curAttackerId != 0)
                 GameManager.instance.GetPlayer(curAttackerId).photonView.RPC("AddKill", RpcTarget.All);
 
-            // set the cam to spectator mode
             GetComponentInChildren<CameraController>().SetAsSpectator();
 
-            // disable physics and hide the player avatar
             rig.isKinematic = true;
             transform.position = new Vector3(0, -50, 0);
         }
@@ -175,8 +155,6 @@ public class PlayerController : MonoBehaviourPun
     {
         curHp = Mathf.Clamp(curHp + amountToHeal, 0, maxHp);
 
-        // update the health bar UI
         GameUI.instance.UpdateHealthBar();
     }
-
 }

@@ -7,7 +7,7 @@ public class ForceField : MonoBehaviour
     public float shrinkWaitTime;
     public float shrinkAmount;
     public float shrinkDuration;
-    public float minShrinkAmount; // the smallest we can be (not the smallest amount to shrink) "minDiameter" would be more accurate
+    public float minShrinkAmount; 
 
     public int playerDamage;
 
@@ -16,14 +16,12 @@ public class ForceField : MonoBehaviour
     private float targetDiameter;
     private float lastPlayerCheckTime;
 
-    // Start is called before the first frame update
     void Start()
     {
         lastShrinkEndTime = Time.time;
         targetDiameter = transform.localScale.x;
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (shrinking)
@@ -34,7 +32,6 @@ public class ForceField : MonoBehaviour
         }
         else
         {
-            // can we shrink again?
             if (Time.time - lastShrinkEndTime >= shrinkWaitTime && transform.localScale.x > minShrinkAmount)
                 Shrink();
         }
@@ -46,7 +43,6 @@ public class ForceField : MonoBehaviour
     {
         shrinking = true;
 
-        // make sure we don't shrink below the min amount
         if (transform.localScale.x - shrinkAmount > minShrinkAmount)
             targetDiameter -= shrinkAmount;
         else
@@ -61,10 +57,8 @@ public class ForceField : MonoBehaviour
         {
             lastPlayerCheckTime = Time.time;
 
-            // loop through all the players
             foreach (PlayerController player in GameManager.instance.players)
             {
-                // if (player.dead || !player) << fix null reference error by checking !player first
                 if (!player || player.dead)
                 {
                     continue;
